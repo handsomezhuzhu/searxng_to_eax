@@ -1,7 +1,7 @@
 // main.ts
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
-const EXA_API_KEY = "你的_EXA_API_KEY"; // 替换成你自己的 key
+const EXA_API_KEY = "fb1167bd-fca7-44ce-9164-7a556c0c7085"; // 替换成你自己的 key
 
 serve(async (req: Request) => {
   const url = new URL(req.url);
