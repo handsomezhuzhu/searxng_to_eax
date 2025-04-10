@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
-// 从环境变量读取 EXA API 密钥
 const EXA_API_KEY = Deno.env.get("EXA_API_KEY");
 
 if (!EXA_API_KEY) {
@@ -19,7 +18,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const exaRes = await fetch("https://api.exa.ai/search_and_contents", {
+    const exaRes = await fetch("https://api.exa.ai/search", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -28,20 +27,9 @@ serve(async (req: Request) => {
       body: JSON.stringify({
         query,
         numResults: 5,
-        text: true, // ✅ 关键参数，让 EXA 返回网页内容
+        // ⚠️ 这里没有 text: true，因为 REST API 不支持
       }),
     });
-
-    if (!exaRes.ok) {
-      const errText = await exaRes.text();
-      return new Response(
-        JSON.stringify({ error: "EXA API error", detail: errText }),
-        {
-          status: 502,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    }
 
     const exaJson = await exaRes.json();
 
@@ -51,7 +39,7 @@ serve(async (req: Request) => {
       content:
         r.text?.trim() ||
         r.snippet?.trim() ||
-        `${r.title ?? ""} - ${r.url ?? ""}`, // fallback
+        `${r.title ?? ""} - ${r.url ?? ""}`,
     }));
 
     return new Response(JSON.stringify({ results }), {
