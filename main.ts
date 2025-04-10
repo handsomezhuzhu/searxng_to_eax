@@ -1,7 +1,11 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
-// 替换成你的 EXA API 密钥
-const EXA_API_KEY = "fb1167bd-fca7-44ce-9164-7a556c0c7085";
+// ✅ 使用 Deno.env 获取密钥（从环境变量 EXA_API_KEY 中读取）
+const EXA_API_KEY = Deno.env.get("EXA_API_KEY");
+
+if (!EXA_API_KEY) {
+  console.error("❌ ERROR: EXA_API_KEY 环境变量未设置！");
+}
 
 serve(async (req: Request) => {
   const url = new URL(req.url);
@@ -15,7 +19,6 @@ serve(async (req: Request) => {
   }
 
   try {
-    // 请求 EXA API
     const exaRes = await fetch("https://api.exa.ai/search", {
       method: "POST",
       headers: {
@@ -28,24 +31,19 @@ serve(async (req: Request) => {
       }),
     });
 
-    if (!exaRes.ok) {
-      const errText = await exaRes.text();
-      return new Response(
-        JSON.stringify({ error: "EXA API error", detail: errText }),
-        {
-          status: 502,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    }
-
     const exaJson = await exaRes.json();
 
-    // 格式化成 SearxNG/OpenWebUI 识别的结构
-    const results = exaJson.results.map((r: any) => ({
-      title: r.title,
-      url: r.url,
-      content: r.text ?? "", // OpenWebUI 需要 content 字段
+    // 日志输出（可选）
+    console.log("EXA 返回：", JSON.stringify(exaJson, null, 2));
+
+    const results = (exaJson.results ?? []).map((r: any) => ({
+      title: r.title ?? "No title",
+      url: r.url ?? "",
+      content:
+        r.text ??
+        r.snippet ??
+        r.description ??
+        `${r.title ?? ""} - ${r.url ?? ""}`, // ⚠️ 兜底逻辑
     }));
 
     return new Response(JSON.stringify({ results }), {
