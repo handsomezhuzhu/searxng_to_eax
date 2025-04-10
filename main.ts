@@ -26,14 +26,16 @@ serve(async (req: Request) => {
       },
       body: JSON.stringify({
         query,
+        contents: {
+          text: true, // ✅ 启用正文摘要提取
+        },
         numResults: 5,
-        // ⚠️ 这里没有 text: true，因为 REST API 不支持
       }),
     });
 
     const exaJson = await exaRes.json();
 
-    const results = (exaJson.results ?? []).map((r: any) => ({
+    const results = (exaJson.data?.results ?? []).map((r: any) => ({
       title: r.title ?? "No title",
       url: r.url ?? "",
       content:
