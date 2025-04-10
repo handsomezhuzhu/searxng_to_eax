@@ -2,10 +2,6 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
 const EXA_API_KEY = Deno.env.get("EXA_API_KEY");
 
-if (!EXA_API_KEY) {
-  console.error("❌ 未设置 EXA_API_KEY 环境变量！");
-}
-
 serve(async (req: Request) => {
   const url = new URL(req.url);
   const query = url.searchParams.get("q");
@@ -26,15 +22,14 @@ serve(async (req: Request) => {
       },
       body: JSON.stringify({
         query,
-        contents: {
-          text: true, // ✅ 启用正文摘要提取
-        },
+        contents: { text: true },
         numResults: 5,
       }),
     });
 
     const exaJson = await exaRes.json();
 
+    // ✅ 关键：使用 data.results
     const results = (exaJson.data?.results ?? []).map((r: any) => ({
       title: r.title ?? "No title",
       url: r.url ?? "",
