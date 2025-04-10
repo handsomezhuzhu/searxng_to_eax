@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
-// ✅ 使用 Deno.env 获取密钥（从环境变量 EXA_API_KEY 中读取）
+// 从环境变量读取 EXA API 密钥
 const EXA_API_KEY = Deno.env.get("EXA_API_KEY");
 
 if (!EXA_API_KEY) {
-  console.error("❌ ERROR: EXA_API_KEY 环境变量未设置！");
+  console.error("❌ 未设置 EXA_API_KEY 环境变量！");
 }
 
 serve(async (req: Request) => {
@@ -19,7 +19,7 @@ serve(async (req: Request) => {
   }
 
   try {
-    const exaRes = await fetch("https://api.exa.ai/search", {
+    const exaRes = await fetch("https://api.exa.ai/search_and_contents", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -28,22 +28,30 @@ serve(async (req: Request) => {
       body: JSON.stringify({
         query,
         numResults: 5,
+        text: true, // ✅ 关键参数，让 EXA 返回网页内容
       }),
     });
 
-    const exaJson = await exaRes.json();
+    if (!exaRes.ok) {
+      const errText = await exaRes.text();
+      return new Response(
+        JSON.stringify({ error: "EXA API error", detail: errText }),
+        {
+          status: 502,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
 
-    // 日志输出（可选）
-    console.log("EXA 返回：", JSON.stringify(exaJson, null, 2));
+    const exaJson = await exaRes.json();
 
     const results = (exaJson.results ?? []).map((r: any) => ({
       title: r.title ?? "No title",
       url: r.url ?? "",
       content:
-        r.text ??
-        r.snippet ??
-        r.description ??
-        `${r.title ?? ""} - ${r.url ?? ""}`, // ⚠️ 兜底逻辑
+        r.text?.trim() ||
+        r.snippet?.trim() ||
+        `${r.title ?? ""} - ${r.url ?? ""}`, // fallback
     }));
 
     return new Response(JSON.stringify({ results }), {
