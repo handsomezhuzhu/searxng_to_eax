@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
-// ✅ 使用 Deno.env 获取密钥（从环境变量 EXA_API_KEY 中读取）
 const EXA_API_KEY = Deno.env.get("EXA_API_KEY");
 
 if (!EXA_API_KEY) {
@@ -29,18 +28,17 @@ serve(async (req: Request) => {
         query,
         numResults: 5,
         contents: {
-          text: true, // ✅ 启用返回正文内容
+          text: true,
         },
       }),
     });
 
     const exaJson = await exaRes.json();
 
-    // ✅ 日志输出（调试用，可在 Deno Deploy 控制台查看）
     console.log("EXA 返回：", JSON.stringify(exaJson, null, 2));
 
-    // ✅ 读取 data.results，避免返回空
-    const results = (exaJson.data?.results ?? []).map((r: any) => ({
+    // ✅ 正确提取 results（顶层）
+    const results = (exaJson.results ?? []).map((r: any) => ({
       title: r.title ?? "No title",
       url: r.url ?? "",
       content:
